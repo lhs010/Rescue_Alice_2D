@@ -66,47 +66,24 @@ class Manager:
                 # 清空进度文件
                 with open(progress_file_path, 'w') as file:
                     file.write("")
-                progress_info = ""
-        self.game_start(progress_info)
+        self.game_start()
         # 刷新界面
         pygame.display.flip()
         return
 
-    def game_start(self, progress_info=""):
+    def game_start(self):
         # 开始游戏
         pygame.display.flip()
-        # 初始化玩家对象
-        playerObj = Player()
-        if progress_info != "":
-            playerObj = self.load_progress(playerObj, progress_info)
         # 加载关卡
-        GameLevel().level_1(self.screen, playerObj)
-        GameLevel().level_2(self.screen, playerObj)
+        GameLevel().level_1(self.screen)
+        GameLevel().level_2(self.screen)
         return
 
     def game_quit(self):
         # 退出游戏
         pygame.quit()
         sys.exit()
-        
-    def load_progress(self, playerObj, progress_info):
-        # 载入进度
-        progress_info = json.loads(progress_info)
-        # 玩家速度
-        playerObj.player_speed = progress_info["player_speed"]
-        # 玩家等级
-        playerObj.player_level = progress_info["player_level"]
-        # 玩家经验
-        playerObj.player_exp = progress_info["player_exp"]
-        # 玩家生命值
-        playerObj.player_hp = progress_info["player_hp"]
-        # 玩家攻击力
-        playerObj.player_attack = progress_info["player_attack"]
-        # 每次升级需要经验
-        playerObj.player_exp_needed = progress_info["player_exp_needed"]
-        # 当前关卡
-        playerObj.current_level = progress_info["current_level"]
-        return playerObj
+
 
 def drawText(screen, text, x, y, textHeight=30, fontColor=(255, 255, 255), backgroudColor=None):
     # 通过字体文件获得字体对象 参数1 字体文件 参数2 字体大小
@@ -194,6 +171,12 @@ def waitPlayerInput(screen, text="", eventKey=pygame.K_s):
 
 
 class GameLevel(object):
+
+    def __init__(self):
+        # 初始化玩家对象
+        self.playerObj = Player()
+        # 加载进度
+        self.playerObj.load_progress()
         
     def platform_1_image(self):
         bgi = pygame.image.load("./static/platform_1.png").convert_alpha()
@@ -203,7 +186,7 @@ class GameLevel(object):
         bgi = pygame.image.load("./static/platform_2.png").convert_alpha()
         return bgi
     
-    def pass_level(self,screen, playerObj):
+    def pass_level(self,screen):
         # 播放通关音效
         Music().pass_level()
         # 显示下一关入口
@@ -211,15 +194,15 @@ class GameLevel(object):
         image = pygame.transform.scale(image, (80, 80))
         screen.blit(image, (430, 220))
         drawText(screen, "向前进入下一关", 380, 180, 20)
-        if playerObj.x >= 520:
+        if self.playerObj.x >= 520:
             # 保存关卡进度
-            playerObj.current_level += 1
-            playerObj.save_level_progress()
+            self.playerObj.current_level += 1
+            self.playerObj.save_level_progress()
             return True
         return False
 
-    def level_1(self, screen, playerObj):
-        if playerObj.current_level != 1:
+    def level_1(self, screen):
+        if self.playerObj.current_level != 1:
             return
         clock = pygame.time.Clock()
         # 绘制背景# 绘制剧情音乐
@@ -239,7 +222,7 @@ class GameLevel(object):
         # 是否与npc互动
         is_npc_interactive = False
         # 重置玩家位置
-        playerObj.reset_player_pos()
+        self.playerObj.reset_player_pos()
         # npc位置
         npc_x = window_width
         npc_y = 310
@@ -261,43 +244,43 @@ class GameLevel(object):
                     game_over = True
                     break
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE and playerObj.on_ground:
-                        playerObj.vel_y = playerObj.jump_power
+                    if event.key == pygame.K_SPACE and self.playerObj.on_ground:
+                        self.playerObj.vel_y = self.playerObj.jump_power
                     elif event.key == pygame.K_a:
-                        playerObj.attack()
+                        self.playerObj.attack()
             # 绘制背景
             GameBackground().level_1(screen)
             # 绘制平台
             for platform in platforms:
                 platform.draw(screen)
             # 玩家移动
-            playerObj.player_move(screen)
+            self.playerObj.player_move(screen)
             # 更新玩家碰撞
-            playerObj.update_collision(platforms)
+            self.playerObj.update_collision(platforms)
             # 绘制玩家面板
-            playerObj.player_info(screen)
+            self.playerObj.player_info(screen)
             # 绘制玩家
-            playerObj.draw(screen)
+            self.playerObj.draw(screen)
             # 绘制敌人
             for enemy in enemies:
                 if enemy.is_dead:
                     enemies.remove(enemy)
                     continue
                 else:
-                    enemy.attack(screen, playerObj)  # 非阻塞逐帧更新动画
+                    enemy.attack(screen, self.playerObj)  # 非阻塞逐帧更新动画
                     if enemy.speed != 0:
                         enemy.move(screen, platforms)
             # 绘制玩家攻击
-            for target in playerObj.remote_attack_targets:
+            for target in self.playerObj.remote_attack_targets:
                 if target.is_alive:
                     target.draw(screen)
-                    target.update(screen, platforms,enemies,playerObj)
+                    target.update(screen, platforms,enemies,self.playerObj)
                 else:
-                    playerObj.remote_attack_targets.remove(target)
+                    self.playerObj.remote_attack_targets.remove(target)
             # 玩家升级检测
-            playerObj.player_level_up(screen)
+            self.playerObj.player_level_up(screen)
             if is_npc_interactive:
-                game_over = self.pass_level(screen, playerObj)
+                game_over = self.pass_level(screen)
             elif enemies is None or len(enemies) == 0:
                 # 绘制NPC从右边滑出
                 if npc_x > 450:
@@ -308,7 +291,7 @@ class GameLevel(object):
                     screen.blit(pygame.transform.flip(npc_image, True, False), (npc_x, npc_y))
                     # 玩家和NPC互动检测
                     npc_rect = npc_image.get_rect(topleft=(npc_x, npc_y))
-                    if npc_rect.colliderect(playerObj.rect):
+                    if npc_rect.colliderect(self.playerObj.rect):
                         pygame.image.save(screen, "./static/temp.jpg")
                         # 绘制交互提示
                         drawText(screen, "按'F'键与NPC互动", 200, 150, 20, (255, 255, 255))
@@ -343,7 +326,7 @@ class GameLevel(object):
                                 ["player", "嗯嗯"],
                             ]
                             npc_big_image = pygame.transform.scale(npc_image, (300, 350))
-                            player_big_image = pygame.transform.scale(playerObj.player_image, (300, 300))
+                            player_big_image = pygame.transform.scale(self.playerObj.player_image, (300, 300))
                             for text in text_list:
                                 # 清空事件队列
                                 pygame.event.clear()
@@ -359,14 +342,14 @@ class GameLevel(object):
                                 sbgi = pygame.transform.scale(sbgi, (window_width, window_height))
                                 screen.blit(sbgi, (0, 0))
                             # 玩家获得经验
-                            playerObj.player_exp += 100
+                            self.playerObj.player_exp += 100
             # 更新显示
             pygame.display.flip()
             # 控制帧率
             clock.tick(60)
         return
 
-    def level_2(self, scrren, playerObj):
+    def level_2(self, screen):
         pass
 
 
@@ -700,6 +683,31 @@ class Player(object):
             f.write(str(json.dumps(info)))
         return
 
+    def load_progress(self):
+        # 读取进度信息
+        progress_info_json = ""
+        with open(progress_file_path, "r") as f:
+            progress_info_json = f.read()
+        if progress_info_json == "":
+            return
+        # 载入进度信息
+        progress_info = json.loads(progress_info_json)
+        # 玩家速度
+        self.player_speed = progress_info["player_speed"]
+        # 玩家等级
+        self.player_level = progress_info["player_level"]
+        # 玩家经验
+        self.player_exp = progress_info["player_exp"]
+        # 玩家生命值
+        self.player_hp = progress_info["player_hp"]
+        # 玩家攻击力
+        self.player_attack = progress_info["player_attack"]
+        # 每次升级需要经验
+        self.player_exp_needed = progress_info["player_exp_needed"]
+        # 当前关卡
+        self.current_level = progress_info["current_level"]
+        return
+
 # 敌人类
 class Enemy(object):
     def __init__(self, x, y, direction="left", type=0, level=1):
@@ -1027,7 +1035,7 @@ class LongPlatform:
         for i in range(self.length):
             screen.blit(self.image, (self.x + i * self.tile_width, self.y))
 
-
+# 角色类
 class Role(object):
 
     def role_1(self, size=(80, 80)):
@@ -1042,7 +1050,7 @@ class Role(object):
         npc_image = pygame.transform.scale(npc_image, size)
         return npc_image
 
-
+# 文案类
 class GameText(object):
     def level_1(self):
         text = "剧情摘要\n你是一名生物学家名字为弗兰克,\n由于你曝光了一所名为天网生物\n实验室研究的一项邪恶研究导致\n你的女友爱丽丝被天网组织抓走了\n你发誓一定要救回你的女友！\n\n\n按下S键继续..."
