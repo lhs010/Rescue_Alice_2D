@@ -173,16 +173,12 @@ class GameLevel(object):
         is_npc_interactive = False
         # 重置玩家位置
         playerObj.reset_player_pos()
+        # npc位置
+        npc_x = window_width
+        npc_y = 310
         # 初始化游戏平台
         platforms = [
-            # Platform(0, 0, 20, 400, self.platform_2_image()),
-            # Platform(550, 0, 20, 400, self.platform_2_image()),
-            #Platform(0, 0, 570, 20, self.platform_2_image()),
-            Platform(0, 380, 200, 20, self.platform_2_image()),
-            Platform(300, 380, 270, 20, self.platform_2_image()),
-            #Platform(100, 230, 60, 30, self.platform_1_image()),
-            Platform(150, 350, 30, 30, self.platform_2_image()),
-            Platform(310, 300, 50, 30, self.platform_1_image())
+            Platform(0, 380, window_width, 20, self.platform_1_image())
         ]
         # 绘制敌人
         enemies = [
@@ -241,61 +237,67 @@ class GameLevel(object):
                 if playerObj.x >= 520:
                     game_over = True
             elif enemies is None or len(enemies) == 0:
-                # 绘制NPC
-                screen.blit(pygame.transform.flip(npc_image, True, False), (450, 310))
-                # 玩家和NPC互动检测
-                if playerObj.x >= 420 and playerObj.x <= 480 and playerObj.y >= 290 and playerObj.y <= 350:
-                    pygame.image.save(screen, "./static/temp.jpg")
-                    # 绘制交互提示
-                    drawText(screen, "按'F'键与NPC互动", 200, 150, 20, (255, 255, 255))
-                    keys = pygame.key.get_pressed()
-                    if keys[pygame.K_f]:
-                        is_npc_interactive = True
-                        sbgi = pygame.image.load("./static/temp.jpg")
-                        sbgi = pygame.transform.scale(sbgi, (window_width, window_height))
-                        screen.blit(sbgi, (0, 0))
-                        # 主视图加灰色半透明蒙层
-                        overlay = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
-                        overlay.fill((0, 0, 0, 128))  # 半透明
-                        screen.blit(overlay, (0, 0))
-                        # 截取并保存屏幕
+                # 绘制NPC从右边滑出
+                if npc_x > 450:
+                    screen.blit(pygame.transform.flip(npc_image, True, False), (npc_x, npc_y))
+                    npc_x -= 3
+                else:
+                    # 绘制NPC
+                    screen.blit(pygame.transform.flip(npc_image, True, False), (npc_x, npc_y))
+                    # 玩家和NPC互动检测
+                    npc_rect = npc_image.get_rect(topleft=(npc_x, npc_y))
+                    if npc_rect.colliderect(playerObj.rect):
                         pygame.image.save(screen, "./static/temp.jpg")
-                        text_list = [
-                            ["npc", "你好弗兰克!"],
-                            ["npc", "我等你很久了"],
-                            ["player", "你是什么人？"],
-                            ["npc", "别担心，我不是那个天网组织的人"],
-                            ["npc", "我叫布利斯，也是一名生物科学家"],
-                            ["npc", "我知道所有发生在你身上的事"],
-                            ["npc", "我会帮助你救回你的家人"],
-                            ["player", "你为什么帮我？你有什么目的？"],
-                            ["npc", "因为我的家人也被那帮畜生抓走了"],
-                            ["npc", "我帮你事实上也是在帮我自己，请你相信我"],
-                            ["player", "好吧，我可以相信你，那现在你有什么线索吗？"],
-                            ["npc", "不好意思，目前还没有"],
-                            ["npc", "不过你可以去13区看看，说不定会有线索"],
-                            ["player", "好吧，我马上去"],
-                            ["npc", "那先再见了，我们很快会再见的"],
-                            ["player", "嗯嗯"],
-                        ]
-                        npc_big_image = pygame.transform.scale(npc_image, (300, 350))
-                        player_big_image = pygame.transform.scale(playerObj.player_image, (300, 300))
-                        for text in text_list:
-                            # 清空事件队列
-                            pygame.event.clear()
-                            if text[0] == "player":
-                                screen.blit(player_big_image, (-100, 50))
-                            else:
-                                screen.blit(pygame.transform.flip(npc_big_image, True, False), (330, 100))
-                            drawText(screen, text[1], 150, 200, 15, (255, 255, 255))
-                            # 等待用户按下任意键
-                            waitPlayerInput(screen, "按'F'键继续...", pygame.K_f)
-                            # 渲染快照背景图，用于清除本次交互内容
+                        # 绘制交互提示
+                        drawText(screen, "按'F'键与NPC互动", 200, 150, 20, (255, 255, 255))
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_f]:
+                            is_npc_interactive = True
                             sbgi = pygame.image.load("./static/temp.jpg")
                             sbgi = pygame.transform.scale(sbgi, (window_width, window_height))
                             screen.blit(sbgi, (0, 0))
-                        # 玩家获得经验
-                        playerObj.player_exp += 100
+                            # 主视图加灰色半透明蒙层
+                            overlay = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
+                            overlay.fill((0, 0, 0, 128))  # 半透明
+                            screen.blit(overlay, (0, 0))
+                            # 截取并保存屏幕
+                            pygame.image.save(screen, "./static/temp.jpg")
+                            text_list = [
+                                ["npc", "你好弗兰克!"],
+                                ["npc", "我等你很久了"],
+                                ["player", "你是什么人？"],
+                                ["npc", "别担心，我不是那个天网组织的人"],
+                                ["npc", "我叫布利斯，也是一名生物科学家"],
+                                ["npc", "我知道所有发生在你身上的事"],
+                                ["npc", "我会帮助你救回你的家人"],
+                                ["player", "你为什么帮我？你有什么目的？"],
+                                ["npc", "因为我的家人也被那帮畜生抓走了"],
+                                ["npc", "我帮你事实上也是在帮我自己，请你相信我"],
+                                ["player", "好吧，我可以相信你，那现在你有什么线索吗？"],
+                                ["npc", "不好意思，目前还没有"],
+                                ["npc", "不过你可以去13区看看，说不定会有线索"],
+                                ["player", "好吧，我马上去"],
+                                ["npc", "那先再见了，我们很快会再见的"],
+                                ["player", "嗯嗯"],
+                            ]
+                            npc_big_image = pygame.transform.scale(npc_image, (300, 350))
+                            player_big_image = pygame.transform.scale(playerObj.player_image, (300, 300))
+                            for text in text_list:
+                                # 清空事件队列
+                                pygame.event.clear()
+                                if text[0] == "player":
+                                    screen.blit(player_big_image, (-100, 50))
+                                else:
+                                    screen.blit(pygame.transform.flip(npc_big_image, True, False), (330, 100))
+                                drawText(screen, text[1], 150, 200, 15, (255, 255, 255))
+                                # 等待用户按下任意键
+                                waitPlayerInput(screen, "按'F'键继续...", pygame.K_f)
+                                # 渲染快照背景图，用于清除本次交互内容
+                                sbgi = pygame.image.load("./static/temp.jpg")
+                                sbgi = pygame.transform.scale(sbgi, (window_width, window_height))
+                                screen.blit(sbgi, (0, 0))
+                            # 玩家获得经验
+                            playerObj.player_exp += 100
             # 更新显示
             pygame.display.flip()
             # 控制帧率
