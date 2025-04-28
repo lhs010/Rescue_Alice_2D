@@ -61,10 +61,26 @@ class Music(object):
 
     def pass_level(self):
         # 通关音效
-        pygame.mixer.music.load("./static/pass_level.ogg")
-        pygame.mixer.music.play(1)
+        pygame.mixer.music.load("./static/bgm.ogg")
+        pygame.mixer.music.play()
         pygame.mixer.music.set_volume(0.5)
 
+    def hurt(self):
+        # 受伤音效
+        pygame.mixer.music.load("./static/hurt.mp3")
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(0.5)
+
+    def death(self):
+        # 死亡音效
+        pygame.mixer.music.load("./static/death.mp3")
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(0.5)
+
+    def up(self):
+        # 升级音效
+        pygame.mixer.music.load("./static/up.ogg")
+        pygame.mixer.music.play()
 
 # 平台类
 class Platform(object):

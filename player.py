@@ -1,7 +1,7 @@
 import pygame
 import tools
 import json
-
+import media
 
 class Player(object):
 
@@ -27,6 +27,8 @@ class Player(object):
         self.player_exp = 0
         # 玩家生命值
         self.player_hp = 100
+        # 玩家最大生命值
+        self.player_max_hp = 100
         # 玩家攻击力
         self.player_attack = 10
         # 攻击频率
@@ -59,7 +61,7 @@ class Player(object):
         # 玩家面板
         tools.drawText(screen, "等级: " + str(self.player_level), 10, 10, 10, (255, 255, 255))
         tools.drawText(screen, "经验: " + str(self.player_exp) + "/" + str(self.player_exp_needed), 10, 20, 10, (255, 255, 255))
-        tools.drawText(screen, "血量: " + str(int(self.player_hp)), 10, 30, 10, (255, 255, 255))
+        tools.drawText(screen, "血量: " + str(int(self.player_hp)) + "/" + str(int(self.player_max_hp)), 10, 30, 10, (255, 255, 255))
         tools.drawText(screen, "攻击力: " + str(int(self.player_attack)), 10, 40, 10, (255, 255, 255))
         tools.drawText(screen, "位置: [" + str(self.x) + "," + str(self.y) + "]", 10, 50, 10, (255, 255, 255))
 
@@ -76,17 +78,18 @@ class Player(object):
             # 显示升级信息
             tools.drawText(screen, "等级提升!", 200, 50, 30, (255, 255, 0))
             tools.drawText(screen, "等级: " + str(self.player_level) + " -> " + str(self.player_level + 1), 200, 90, 20, (0, 255, 255))
-            tools.drawText(screen, "血量: " + str(int(self.player_hp)) + " -> " + str(self.player_hp + int(self.player_hp * self.player_level * 0.05)), 200, 110, 20, (0, 255, 255))
+            tools.drawText(screen, "最大血量: " + str(int(self.player_max_hp)) + " -> " + str(self.player_max_hp + int(self.player_max_hp * self.player_level * 0.05)), 200, 110, 20, (0, 255, 255))
             tools.drawText(screen, "攻击力: " + str(int(self.player_attack)) + " -> " + str(self.player_attack + int(self.player_attack * self.player_level * 0.2)), 200, 130, 20, (0, 255, 255))
             # 更新玩家信息
             self.player_level += 1
             self.player_exp = self.player_exp - self.player_exp_needed
             self.player_exp_needed += self.player_exp_needed * self.player_level * 0.5
-            self.player_hp += self.player_hp * self.player_level * 0.05
+            hp = self.player_max_hp * self.player_level * 0.05
+            self.player_max_hp += hp
+            self.player_hp = self.player_max_hp if self.player_hp + hp > self.player_max_hp else self.player_hp + hp
             self.player_attack += self.player_attack * self.player_level * 0.2
             # 播放升级音效
-            pygame.mixer.music.load("./static/up.ogg")
-            pygame.mixer.music.play()
+            media.Music().up()
             # 等待用户输入
             tools.waitPlayerInput(screen, "按'F'键继续...", pygame.K_f)
         return
@@ -208,18 +211,8 @@ class Player(object):
             # 重置玩家位置
             self.reset_player_pos()
         self.player_hp -= damage
-        # 受伤音效
-        pygame.mixer.music.load("./static/hurt.mp3")
-        pygame.mixer.music.play()
-        # 扣血动画
-        for i in range(10):
-            self.player_image.set_alpha(128)
-            self.draw(screen)
-            pygame.display.flip()
-        # 恢复透明度
-        self.player_image.set_alpha(255)
-        self.draw(screen)
-        pygame.display.flip()
+        # 播放受伤音效
+        media.Music().hurt()
         if self.player_hp <= 0:
             self.player_death(screen)
         return
@@ -232,19 +225,18 @@ class Player(object):
         self.player_hp = 0
         # 渲染玩家面板
         self.player_info(screen)
+        # 播放死亡音效
+        media.Music().death()
         # 主视图加灰色半透明蒙层
         overlay = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 128))  # 半透明
         screen.blit(overlay, (0, 0))
         # 显示死亡信息
         tools.drawText(screen, "你已死亡!", 200, 50, 30, (255, 0, 0))
-        # 等待用户输入
-        tools.waitPlayerInput(screen, "按'F'键回到主界面...", pygame.K_f)
-        # 播放死亡音效
-        pygame.mixer.music.load("./static/death.mp3")
-        pygame.mixer.music.play()
         # 保存关卡进度
         self.save_level_progress()
+        # 等待用户输入
+        tools.waitPlayerInput(screen, "按'F'键回到主界面...", pygame.K_f)
         # 回到主界面
         manager = main.Manager()
         manager.main()
@@ -260,8 +252,8 @@ class Player(object):
             "player_level" : self.player_level,
             # 玩家经验
             "player_exp" : self.player_exp,
-            # 玩家生命值
-            "player_hp" : self.player_hp,
+            # 玩家最大生命值
+            "player_max_hp" : self.player_max_hp,
             # 玩家攻击力
             "player_attack" : self.player_attack,
             # 每次升级需要经验
@@ -290,8 +282,10 @@ class Player(object):
         self.player_level = progress_info["player_level"]
         # 玩家经验
         self.player_exp = progress_info["player_exp"]
+        # 玩家最大生命值
+        self.player_max_hp = progress_info["player_max_hp"]
         # 玩家生命值
-        self.player_hp = progress_info["player_hp"]
+        self.player_hp = progress_info["player_max_hp"]
         # 玩家攻击力
         self.player_attack = progress_info["player_attack"]
         # 每次升级需要经验

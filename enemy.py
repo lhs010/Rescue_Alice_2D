@@ -1,6 +1,6 @@
 import pygame
 import random
-
+import media
 
 # 敌人类
 class Enemy(object):
@@ -204,13 +204,8 @@ class Enemy(object):
     def enemy_hurt(self, screen, damage):
         # 扣血
         self.hp -= damage
-        # 扣血动画
-        for _ in range(10):
-            self.image.set_alpha(128)
-            self.draw(screen)
-        # 恢复透明度
-        self.image.set_alpha(255)
-        self.draw(screen)
+        # 播放受伤音效
+        media.Music().hurt()
         if self.hp <= 0:
             # 死亡
             self.enemy_death(screen)
@@ -221,7 +216,7 @@ class Enemy(object):
         self.image.set_alpha(0)
         self.draw(screen)
         # 死亡音效
-        pygame.mixer.Sound("./static/death.mp3").play()
+        media.Music().death()
         self.is_dead = True
         return
 

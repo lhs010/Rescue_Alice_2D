@@ -26,8 +26,6 @@ class GameLevel(object):
         return bgi
     
     def pass_level(self,screen):
-        # 播放通关音效
-        media.Music().pass_level()
         # 显示下一关入口
         image = pygame.image.load("./static/y.png")
         image = pygame.transform.scale(image, (80, 80))
@@ -44,7 +42,7 @@ class GameLevel(object):
         if self.playerObj.current_level != 1:
             return
         clock = pygame.time.Clock()
-        # 绘制背景# 绘制剧情音乐
+        # 绘制剧情音乐
         media.Music().plot()
         # 绘制剧情背景
         media.GameBackground().level_1_plot(screen)
