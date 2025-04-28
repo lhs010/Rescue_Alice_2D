@@ -81,13 +81,13 @@ class Player(object):
             tools.drawText(screen, "最大血量: " + str(int(self.player_max_hp)) + " -> " + str(self.player_max_hp + int(self.player_max_hp * self.player_level * 0.05)), 200, 110, 20, (0, 255, 255))
             tools.drawText(screen, "攻击力: " + str(int(self.player_attack)) + " -> " + str(self.player_attack + int(self.player_attack * self.player_level * 0.2)), 200, 130, 20, (0, 255, 255))
             # 更新玩家信息
-            self.player_level += 1
             self.player_exp = self.player_exp - self.player_exp_needed
             self.player_exp_needed += self.player_exp_needed * self.player_level * 0.5
             hp = self.player_max_hp * self.player_level * 0.05
             self.player_max_hp += hp
             self.player_hp = self.player_max_hp if self.player_hp + hp > self.player_max_hp else self.player_hp + hp
             self.player_attack += self.player_attack * self.player_level * 0.2
+            self.player_level += 1
             # 播放升级音效
             media.Music().up()
             # 等待用户输入
