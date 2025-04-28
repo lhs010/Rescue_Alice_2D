@@ -175,3 +175,4 @@ cython_debug/
 
 
 static/temp.jpg
+static/level_progress.json

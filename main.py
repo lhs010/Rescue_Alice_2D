@@ -1,9 +1,11 @@
 import pygame
 import sys
 import random
+import json
 
 window_width = 570
 window_height = 400
+progress_file_path = './static/level_progress.json'
 
 
 class Manager:
@@ -28,20 +30,56 @@ class Manager:
         drawText(self.screen, "拯救爱丽丝", 150, 100, 50, (255, 255, 155))
         # 刷新界面
         pygame.display.flip()
+        # 读取进度文件不存在则创建
+        progress_info = ""
+        try:
+            with open(progress_file_path, "r") as f:
+                progress_info = f.read()
+        except FileNotFoundError:
+            with open(progress_file_path, 'w') as file:
+                file.write("")  # 创建一个空文件
         # 等待玩家输入
-        waitPlayerInput(self.screen, "按下S键开始游戏...", pygame.K_s)
+        if progress_info == "":
+            waitPlayerInput(self.screen, "按下S键开始游戏", pygame.K_s)
+        else:
+            # 绘制提示文字
+            drawText(self.screen, "按下S键继续游戏", 300, 320, 15, (255, 255, 255))
+            drawText(self.screen, "按下D键开始新游戏", 300, 350, 15, (255, 255, 255))
+            pygame.display.flip()
+            # 等待玩家输入
+            input_key = None
+            wait_input = True
+            while wait_input:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN and (event.key in  [pygame.K_s,pygame.K_d]):
+                        input_key = event.key
+                        # 清空事件队列
+                        pygame.event.clear()
+                        # 清空事件队列
+                        pygame.event.clear()
+                        wait_input = False
+                        break
+            if input_key == pygame.K_d:
+                # 清空进度文件
+                with open(progress_file_path, 'w') as file:
+                    file.write("")
+                progress_info = ""
+        self.game_start(progress_info)
         # 刷新界面
         pygame.display.flip()
-        # 游戏开始
-        self.game_start()
         return
 
-    def game_start(self):
+    def game_start(self, progress_info=""):
         # 开始游戏
         pygame.display.flip()
         # 初始化玩家对象
         playerObj = Player()
-        # 加载第一关
+        if progress_info != "":
+            playerObj = self.load_progress(playerObj, progress_info)
+        # 加载关卡
         GameLevel().level_1(self.screen, playerObj)
         GameLevel().level_2(self.screen, playerObj)
         return
@@ -50,7 +88,25 @@ class Manager:
         # 退出游戏
         pygame.quit()
         sys.exit()
-
+        
+    def load_progress(self, playerObj, progress_info):
+        # 载入进度
+        progress_info = json.loads(progress_info)
+        # 玩家速度
+        playerObj.player_speed = progress_info["player_speed"]
+        # 玩家等级
+        playerObj.player_level = progress_info["player_level"]
+        # 玩家经验
+        playerObj.player_exp = progress_info["player_exp"]
+        # 玩家生命值
+        playerObj.player_hp = progress_info["player_hp"]
+        # 玩家攻击力
+        playerObj.player_attack = progress_info["player_attack"]
+        # 每次升级需要经验
+        playerObj.player_exp_needed = progress_info["player_exp_needed"]
+        # 当前关卡
+        playerObj.current_level = progress_info["current_level"]
+        return playerObj
 
 def drawText(screen, text, x, y, textHeight=30, fontColor=(255, 255, 255), backgroudColor=None):
     # 通过字体文件获得字体对象 参数1 字体文件 参数2 字体大小
@@ -138,13 +194,7 @@ def waitPlayerInput(screen, text="", eventKey=pygame.K_s):
 
 
 class GameLevel(object):
-
-    def clearancePrompt(self, screen):
-        image = pygame.image.load("./static/y.png")
-        image = pygame.transform.scale(image, (80, 80))
-        screen.blit(image, (430, 220))
-        drawText(screen, "向前进入下一关", 380, 180, 20)
-
+        
     def platform_1_image(self):
         bgi = pygame.image.load("./static/platform_1.png").convert_alpha()
         return bgi
@@ -152,8 +202,25 @@ class GameLevel(object):
     def platform_2_image(self):
         bgi = pygame.image.load("./static/platform_2.png").convert_alpha()
         return bgi
+    
+    def pass_level(self,screen, playerObj):
+        # 播放通关音效
+        Music().pass_level()
+        # 显示下一关入口
+        image = pygame.image.load("./static/y.png")
+        image = pygame.transform.scale(image, (80, 80))
+        screen.blit(image, (430, 220))
+        drawText(screen, "向前进入下一关", 380, 180, 20)
+        if playerObj.x >= 520:
+            # 保存关卡进度
+            playerObj.current_level += 1
+            playerObj.save_level_progress()
+            return True
+        return False
 
     def level_1(self, screen, playerObj):
+        if playerObj.current_level != 1:
+            return
         clock = pygame.time.Clock()
         # 绘制背景# 绘制剧情音乐
         Music().plot()
@@ -230,12 +297,7 @@ class GameLevel(object):
             # 玩家升级检测
             playerObj.player_level_up(screen)
             if is_npc_interactive:
-                # 播放通关音效
-                Music().pass_level()
-                # 显示下一关入口
-                self.clearancePrompt(screen)
-                if playerObj.x >= 520:
-                    game_over = True
+                game_over = self.pass_level(screen, playerObj)
             elif enemies is None or len(enemies) == 0:
                 # 绘制NPC从右边滑出
                 if npc_x > 450:
@@ -416,6 +478,8 @@ class Player(object):
         self.gravity = 0.5
         # 玩家是否在地面上
         self.on_ground = False
+        # 当前关卡
+        self.current_level = 1
 
     # 玩家详情信息
     def player_info(self, screen):
@@ -602,17 +666,39 @@ class Player(object):
         # 显示死亡信息
         drawText(screen, "你已死亡!", 200, 50, 30, (255, 0, 0))
         # 等待用户输入
-        waitPlayerInput(screen, "按'F'键重新开始...", pygame.K_f)
-        # 重置玩家位置
-        self.reset_player_pos()
+        waitPlayerInput(screen, "按'F'键回到主界面...", pygame.K_f)
         # 播放死亡音效
         pygame.mixer.music.load("./static/death.mp3")
         pygame.mixer.music.play()
+        # 保存关卡进度
+        self.save_level_progress()
         # 回到主界面
         manager = Manager()
         manager.main()
         return
 
+    def save_level_progress(self):
+        # 保存关卡进度
+        info = {
+            # 玩家速度
+            "player_speed" : self.player_speed,
+            # 玩家等级
+            "player_level" : self.player_level,
+            # 玩家经验
+            "player_exp" : self.player_exp,
+            # 玩家生命值
+            "player_hp" : self.player_hp,
+            # 玩家攻击力
+            "player_attack" : self.player_attack,
+            # 每次升级需要经验
+            "player_exp_needed" : self.player_exp_needed,
+            # 当前关卡
+            "current_level" : self.current_level
+        }
+        with open(progress_file_path, "r+") as f:
+            f.truncate(0)  # 清空文件内容
+            f.write(str(json.dumps(info)))
+        return
 
 # 敌人类
 class Enemy(object):
