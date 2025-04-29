@@ -6,7 +6,7 @@ import media
 class Enemy(object):
     def __init__(self, x, y, direction="left", type=0, level=1):
         self.x = x
-        self.y = y
+        self.y = y + 1
         self.direction = direction
         self.image = None
         self.rect = None
@@ -154,51 +154,47 @@ class Enemy(object):
         return
 
     def move(self, screen, platforms):
-        import main 
-        # 移动
-        if self.direction == "left":
-            self.x -= self.speed
-            self.moved_distance_total += self.speed
-        elif self.direction == "right":
-            self.x += self.speed
-            self.moved_distance_total += self.speed
-        self.rect.x = self.x
-        self.rect.y = self.y
-        # 更新时间驱动的行走动画帧
+        import main
+
+        # 移动敌人
+        self.x = self.x - self.speed if self.direction == "left" else self.x + self.speed
+        self.moved_distance_total += self.speed
+    
+        # 检测是否站在平台上（精确检测底部接触）
+        on_platform = False
+        for platform in platforms:
+            if self.direction == "left":
+                if (self.rect.colliderect(platform.rect)) and platform.rect.topleft[0] <=  self.rect.bottomleft[0]:
+                    on_platform = True
+                    break
+            elif self.direction == "right":
+                if (self.rect.colliderect(platform.rect)) and platform.rect.topright[0] >= self.rect.bottomright[0]:
+                    on_platform = True
+                    break
+        # 如果不在平台上，回退并转向
+        if not on_platform:
+            self.direction = "right" if self.direction == "left" else "left"
+            # 移动敌人
+            self.x = self.x - self.speed if self.direction == "left" else self.x + self.speed
+            self.moved_distance_total = self.speed
+            
+        # 更新行走动画帧
         current_time = pygame.time.get_ticks()
         if current_time - self.last_walk_frame_time > self.walk_animation_speed:
             self.current_walk_frame = (self.current_walk_frame + 1) % len(self.walking_images)
             self.last_walk_frame_time = current_time
-        # 使用当前帧更新图像
+
+        # 绘制当前帧
         current_image = self.walking_images[self.current_walk_frame]
         if self.direction == "left":
             current_image = pygame.transform.flip(current_image, True, False)
         screen.blit(current_image, (self.x, self.y))
         self.update_image(current_image)
-        # 检测是否与平台发生碰撞
-        for platform in platforms:
-            if self.rect.colliderect(platform.rect):
-                # 改变方向
-                if self.direction == "left":
-                    self.direction = "right"
-                elif self.direction == "right":
-                    self.direction = "left"
-                # 重置移动距离
-                self.moved_distance_total = 0
-                # 重置移动最大距离
-                self.move_distance = random.randint(50, 150)
-                break
-        # 判断是否到达屏幕边界或移动距离是否超过最大距离
+        
+        # 屏幕边界或移动距离检测
         if (self.x <= 0 or self.x >= main.window_width - self.width) or (self.moved_distance_total >= self.move_distance):
-            # 改变方向
-            if self.direction == "left":
-                self.direction = "right"
-            elif self.direction == "right":
-                self.direction = "left"
-            # 重置移动距离
+            self.direction = "right" if self.direction == "left" else "left"
             self.moved_distance_total = 0
-            # 重置移动最大距离
-            self.move_distance = random.randint(50, 150)
         return
     
     def enemy_hurt(self, screen, damage):
