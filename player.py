@@ -7,7 +7,7 @@ class Player(object):
 
     def __init__(self):
         # 玩家位置
-        self.x = -20
+        self.x = 0
         self.y = 230
         # 玩家速度
         self.player_speed = 5
@@ -41,10 +41,6 @@ class Player(object):
         self.player_exp_needed = 100
         # 玩家移动总距离
         self.total_distance = 0
-        # 玩家图片
-        self.player_image = Role().role_1((self.width, self.height))
-        # 创建用于碰撞检测的矩形区域
-        self.rect = self.player_image.get_rect(topleft=(self.x, self.y))
         # 玩家跳跃
         self.vel_y = 0
         # 玩家跳跃力
@@ -55,6 +51,30 @@ class Player(object):
         self.on_ground = False
         # 当前关卡
         self.current_level = 1
+        # 行走图片
+        self.walking_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/walking_"+str(i)+".png").convert_alpha(), (self.width, self.height)) for i in range(1, 7)]
+        # 攻击图片
+        self.attack_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/attacking_1-"+str(i)+".png").convert_alpha(), (self.width, self.height)) for i in range(1, 9)]
+        # 是否正在攻击
+        self.is_attacking = False          
+        # 攻击动画帧
+        self.attack_frame = 3
+        # 当前攻击动画帧
+        self.current_attack_frame = 0      
+        # 每帧动画间隔（毫秒）
+        self.attack_animation_speed = 50
+        # 上次动画更新时间
+        self.last_attack_frame_time = 0    
+        # 新增动画控制属性
+        self.current_walk_frame = 0
+        # 上次更新时间
+        self.last_walk_frame_time = 0
+        # 行走动画速度（毫秒每帧）
+        self.walk_animation_speed = 100  # 毫秒每帧
+        # 玩家图片
+        self.player_image = self.walking_images[0]
+        # 创建用于碰撞检测的矩形区域
+        self.rect = self.player_image.get_rect(topleft=(self.x, self.y))
 
     # 玩家详情信息
     def player_info(self, screen):
@@ -94,6 +114,10 @@ class Player(object):
             tools.waitPlayerInput(screen, "按'F'键继续...", pygame.K_f)
         return
 
+    def update_image(self,image):
+        self.player_image = image
+        self.rect = self.player_image.get_rect(topleft=(self.x, self.y))
+
     # 玩家攻击
     def attack(self):
         # 攻击频率控制
@@ -130,35 +154,54 @@ class Player(object):
         if keys[pygame.K_DOWN] and self.on_ground:
             # 下蹲时不可以跳跃
             self.jump_power = 0
-            width = self.width + 20
+            width = self.width
             height = self.height - 30
             self.player_state = "crouch"
             self.player_action = "crouch"
-            self.player_image = Role().role_1((width, height))
+            self.walking_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/walking_"+str(i)+".png").convert_alpha(), (width, height)) for i in range(1, 7)]
+            self.attack_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/attacking_1-"+str(i)+".png").convert_alpha(), (width, height)) for i in range(1, 9)]
+            self.player_image = self.walking_images[0]
             self.rect = self.player_image.get_rect(topleft=(self.x, self.y))
         if not keys[pygame.K_DOWN] and self.on_ground:
             # 恢复跳跃
             self.jump_power = -12
             self.player_state = "walk"
             self.player_action = "walk"
-            self.player_image = Role().role_1((self.width, self.height))
+            self.walking_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/walking_"+str(i)+".png").convert_alpha(), (self.width, self.height)) for i in range(1, 7)]
+            self.attack_images = [pygame.transform.scale(pygame.image.load("./static/role/player_1/attacking_1-"+str(i)+".png").convert_alpha(), (self.width, self.height)) for i in range(1, 9)]
+            self.player_image = self.walking_images[0]
             self.rect = self.player_image.get_rect(topleft=(self.x, self.y))
         if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
             self.player_state = "idle"
-        # 规定玩家边界
-        if self.x < -20:
-            self.x = -20
+        # 规定玩家移动边界
+        if self.x < 0:
+            self.x = 0
         if self.x > 520:
             self.x = 520
         if self.y > 430:
             self.player_hurt(screen,"跌落",35)
         if self.y < 0:
             self.y = 0
+
+        # 更新行走动画帧
+        current_time = pygame.time.get_ticks()
+        if (current_time - self.last_walk_frame_time > self.walk_animation_speed):
+            if self.player_state != "idle":
+                self.current_walk_frame = (self.current_walk_frame + 1) % len(self.walking_images)
+                self.last_walk_frame_time = current_time
+            else:
+                self.current_walk_frame = 0
+                self.last_walk_frame_time = 0
+        # 绘制当前帧
+        current_image = self.walking_images[self.current_walk_frame]
+        if self.player_direction == "left":
+            current_image = pygame.transform.flip(current_image, False, False)
+        self.update_image(current_image)
         return
 
     # 玩家重置位置
     def reset_player_pos(self):
-        self.x = -20
+        self.x = 0
         self.y = 230
         self.rect.x = self.x  # 更新矩形位置
         self.rect.y = self.y
