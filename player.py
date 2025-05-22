@@ -10,7 +10,7 @@ class Player(object):
         self.x = 0
         self.y = 230
         # 玩家速度
-        self.player_speed = 5
+        self.player_speed = 3
         # 玩家宽度
         self.width = 80
         # 玩家高度
@@ -44,7 +44,7 @@ class Player(object):
         # 玩家跳跃
         self.vel_y = 0
         # 玩家跳跃力
-        self.jump_power = -12
+        self.jump_power = -8
         # 玩家重力
         self.gravity = 0.5
         # 玩家是否在地面上
@@ -347,7 +347,7 @@ class Fireball(object):
         self.image = pygame.transform.scale(pygame.image.load("./static/fireball/bullet.png").convert_alpha(), (30, 30))
         self.rect = self.image.get_rect(topleft=(x, y))
         # 速度
-        self.speed = 10
+        self.speed = 7
         # 伤害
         self.damage = int(0.45 * player_attack)
         # 攻击最大距离

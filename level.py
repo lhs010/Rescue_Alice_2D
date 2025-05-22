@@ -18,16 +18,16 @@ class GameLevel(object):
 
         
     def platform_1_image(self):
-        bgi = pygame.image.load("./static/platform_1.png").convert_alpha()
+        bgi = pygame.image.load("./static/level/platform_1.png").convert_alpha()
         return bgi
 
     def platform_2_image(self):
-        bgi = pygame.image.load("./static/platform_2.png").convert_alpha()
+        bgi = pygame.image.load("./static/level/platform_2.png").convert_alpha()
         return bgi
     
     def pass_level(self,screen):
         # 显示下一关入口
-        image = pygame.image.load("./static/y.png")
+        image = pygame.image.load("./static/level/y.png")
         image = pygame.transform.scale(image, (80, 80))
         screen.blit(image, (430, 220))
         tools.drawText(screen, "向前进入下一关", 380, 180, 20)
@@ -232,9 +232,9 @@ class GameLevel(object):
         ]
         # 绘制敌人
         enemies = [
-            Enemy.Enemy(450, 300, "left", 1, 1),
-            Enemy.Enemy(450, 140, "left", 1, 1),
-            Enemy.Enemy(30, 50, "left", 1, 1),
+            Enemy.Enemy(450, 300, "left", 1, 2),
+            Enemy.Enemy(450, 140, "left", 1, 2),
+            Enemy.Enemy(30, 50, "left", 1, 2),
         ]
         pygame.display.flip()
         # 游戏开始
@@ -251,7 +251,7 @@ class GameLevel(object):
                     elif event.key == pygame.K_a:
                         self.playerObj.attack()
             # 绘制背景
-            media.GameBackground().level_1(screen)
+            media.GameBackground().level_2(screen)
             # 绘制平台
             for platform in platforms:
                 platform.draw(screen)
@@ -287,7 +287,7 @@ class GameLevel(object):
                 # 绘制NPC从右边滑出
                 if npc_x > 450:
                     screen.blit(pygame.transform.flip(npc_image, True, False), (npc_x, npc_y))
-                    npc_x -= 3
+                    npc_x -= 1.5
                 else:
                     # 绘制NPC
                     screen.blit(pygame.transform.flip(npc_image, True, False), (npc_x, npc_y))
@@ -296,7 +296,7 @@ class GameLevel(object):
                     if npc_rect.colliderect(self.playerObj.rect):
                         pygame.image.save(screen, "./static/temp.jpg")
                         # 绘制交互提示
-                        tools.drawText(screen, "按'F'键与NPC互动", 200, 150, 20, (255, 255, 255))
+                        tools.drawText(screen, "按'F'键与NPC互动", 200, 150, 20, (0, 0, 0))
                         keys = pygame.key.get_pressed()
                         if keys[pygame.K_f]:
                             is_npc_interactive = True

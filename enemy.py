@@ -77,8 +77,8 @@ class Enemy(object):
             # 近战小兵
             self.width = 80
             self.height = 80
-            self.speed = 3
-            self.speed_copy = 3
+            self.speed = 1.7
+            self.speed_copy = 1.7
             self.hp = int(20 + 10 * level * 0.35)
             self.enemy_attack = int(10 + 10 * level * 0.15)
             self.attack_frequency = 3

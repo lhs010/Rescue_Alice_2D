@@ -18,7 +18,7 @@ def drawText(screen, text, x, y, textHeight=30, fontColor=(255, 255, 255), backg
 
 def drawTextCenter(screen, text, textHeight=30, fontColor=(255, 255, 255), backgroudColor=None):
     # 打字机音效
-    type_sound = pygame.mixer.Sound("./static/typewriter.mp3")
+    type_sound = pygame.mixer.Sound("./static/music/typewriter.mp3")
     # 初始显示的空字符串
     display_text = ""
 
